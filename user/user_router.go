@@ -8,7 +8,6 @@ import (
 )
 
 func UserAPIRegister(router *gin.RouterGroup) {
-	router.GET("/all", get_all_users)
 	router.GET("/:userId", get_user_by_id)
 	router.POST("/", create_user)
 	router.DELETE("/:userId", delete_user_by_id)
@@ -17,9 +16,15 @@ func UserAPIRegister(router *gin.RouterGroup) {
 
 func get_user_by_id(c *gin.Context) {
 	userId := c.Param("userId")
-	found_user := Get_user(userId)
-	userSerializer := UserSerializer{c, found_user}
-	c.JSON(http.StatusOK, gin.H{"userId": userId, "user": userSerializer.Response()})
+	// userId := c.Query("userId")
+	if userId == "all" {
+		get_all_users(c)
+		return
+	} else {
+		found_user := Get_user(userId)
+		userSerializer := UserSerializer{c, found_user}
+		c.JSON(http.StatusOK, gin.H{"userId": userId, "user": userSerializer.Response()})
+	}
 }
 
 func get_all_users(c *gin.Context) {
