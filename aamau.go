@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 
+	"aamau/cake"
+	"aamau/ingredient"
+	"aamau/order"
+	"aamau/recipe"
 	"aamau/user"
 	"aamau/utils"
 
@@ -27,34 +30,14 @@ func start() {
 	log.Printf("About to listen on %s. Go to https://127.0.0.1%s/", listenAddr, listenAddr)
 
 	router := gin.Default()
-
 	api_router_group := router.Group("/api")
-	// router.LoadHTMLGlob("view/*")
 	user.UserAPIRegister(api_router_group.Group("/user"))
-	router.GET("/api/hello", func(c *gin.Context) {
-		message := "Hello World!\n"
-		content := c.Request.URL.Query().Get("name")
-		if content != "" {
-			message = fmt.Sprintf("Hello: %s\n", content)
-		}
-		c.JSON(200, gin.H{
-			"message": message,
-		})
-	})
-	router.GET("/api/echo", func(c *gin.Context) {
-		message := "Empty\n"
-		content := c.Request.URL.Query().Get("content")
-		if content != "" {
-			message = fmt.Sprintf("Echo: %s\n", content)
-		}
-		c.JSON(200, gin.H{
-			"message": message,
-		})
-	})
+	cake.CakeAPIRegister(api_router_group.Group("/cake"))
+	order.OrderAPIRegister(api_router_group.Group("/order"))
+	ingredient.IngredientAPIRegister(api_router_group.Group("/ingredient"))
+	recipe.RecipeAPIRegister(api_router_group.Group("/recipe"))
 
-	router.GET("/api/os", func(c *gin.Context) {
-		c.String(200, runtime.GOOS)
-	})
+	// router.LoadHTMLGlob("view/*")
 	// router.GET("/api/index", func(c *gin.Context) {
 	// 	c.HTML(http.StatusOK, "index.html", nil)
 	// })
