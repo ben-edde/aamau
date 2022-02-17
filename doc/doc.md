@@ -16,19 +16,19 @@ db: mysql
 
 ```
 Table Ingredient
-id, name, weight, amount
+ingredientId, ingredientName, ingredientWeight, ingredientAmount
 
 Table Cake
-id, name, timeNeeded, price
+cakeId, cakeName, dayNeeded, price
 
 Table Recipe
-id, cakeId, igId, intAmtRequired
+recipeId, cakeId, ingredientId, ingredientAmountRequired
 
-Table Order
-id, orderDate, deyDate, uId, cakeId, amount, totalPrice
+Table Orders
+orderId, orderDate, deliveryDate, userId, cakeId, amount, totalPrice
 
 Table User
-id, name, contact, email, address
+userId, userName, contactNo, email, deliveryAddress
 ```
 
 ## Front-end features
