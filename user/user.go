@@ -3,17 +3,23 @@ package user
 import (
 	"aamau/utils"
 	"fmt"
+	"strconv"
 )
 
 type User struct {
-	UserId          uint   `gorm:"type:uint NOT NULL auto_increment; primary_key;column:userId"`
-	UserName        string `gorm:"type:varchar(50) NOT NULL;column:userName" `
-	ContactNo       string `gorm:"type:varchar(10) NOT NULL;column:contactNo" `
-	Email           string `gorm:"type:varchar(100) NOT NULL;column:email" `
-	DeliveryAddress string `gorm:"type:varchar(100) NOT NULL;column:deliveryAddress" `
+	UserId          uint   `gorm:"type:uint auto_increment; primary_key;column:userId" form:"userId" json:"userId"`
+	UserName        string `gorm:"type:varchar(50) NOT NULL;column:userName" form:"userName" json:"userName"`
+	ContactNo       string `gorm:"type:varchar(10) NOT NULL;column:contactNo" form:"contactNo" json:"contactNo"`
+	Email           string `gorm:"type:varchar(100) NOT NULL;column:email" form:"email" json:"email"`
+	DeliveryAddress string `gorm:"type:varchar(100) NOT NULL;column:deliveryAddress" form:"deliveryAddress" json:"deliveryAddress"`
 }
 
-func Get_user(uid int) User {
+func Get_user(userId string) User {
+	uid, err := strconv.Atoi(userId)
+	if err != nil {
+		fmt.Println(err)
+		return User{}
+	}
 	conn := utils.Get_connection()
 	var user User
 	result := conn.Debug().Table("User").Model(&User{}).Where("userId=?", uid).Find(&user)
@@ -23,14 +29,14 @@ func Get_user(uid int) User {
 	return user
 }
 
-func get_users() []User {
+func Get_all_users() []User {
 	conn := utils.Get_connection()
 	var userlist []User
 	conn.Debug().Table("User").Model(&User{}).Find(&userlist)
 	return userlist
 }
 
-func create_user(user User) {
+func Create_user(user User) {
 	conn := utils.Get_connection()
 	result := conn.Debug().Table("User").Model(&User{}).Create(&user)
 	if result.Error != nil || result.RowsAffected != 1 {
@@ -38,15 +44,15 @@ func create_user(user User) {
 	}
 }
 
-func update_user(up_condition, up_field, up_value string) {
+func Update_user(up_condition string, user User) {
 	conn := utils.Get_connection()
-	result := conn.Debug().Table("User").Model(&User{}).Where(up_condition).Update(up_field, up_value)
+	result := conn.Debug().Table("User").Model(&User{}).Where(up_condition).Updates(user)
 	if result.Error != nil || result.RowsAffected != 1 {
 		fmt.Errorf("update user failed.")
 	}
 }
 
-func delete_user(rm_condition string) {
+func Delete_user(rm_condition string) {
 	conn := utils.Get_connection()
 	result := conn.Debug().Table("User").Model(&User{}).Where(rm_condition).Delete(&User{})
 	if result.Error != nil || result.RowsAffected != 1 {
