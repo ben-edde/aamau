@@ -22,7 +22,7 @@ func Get_connection() *gorm.DB {
 	user := CFG_map["USERNAME"]
 	password := CFG_map["PASSWORD"]
 	database := CFG_map["DATABASE"]
-	connString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, password, server, port, database)
+	connString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", user, password, server, port, database)
 
 	conn, err := gorm.Open(mysql.Open(connString), &gorm.Config{})
 	if err != nil {

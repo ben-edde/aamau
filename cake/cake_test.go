@@ -29,6 +29,6 @@ func Test_crud(t *testing.T) {
 	Delete_cake("cakeId=42")
 	found_cake = Get_cake("42")
 	if !reflect.DeepEqual(Cake{}, found_cake) {
-		t.Error("update cake failed.")
+		t.Error("delete cake failed.")
 	}
 }
