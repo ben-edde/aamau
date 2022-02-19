@@ -43,6 +43,7 @@ func start() {
 	// })
 	router.Run(listenAddr)
 }
+
 func main() {
 	start()
 }
