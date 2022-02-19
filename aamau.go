@@ -37,10 +37,6 @@ func start() {
 	ingredient.IngredientAPIRegister(api_router_group.Group("/ingredient"))
 	recipe.RecipeAPIRegister(api_router_group.Group("/recipe"))
 
-	// router.LoadHTMLGlob("view/*")
-	// router.GET("/api/index", func(c *gin.Context) {
-	// 	c.HTML(http.StatusOK, "index.html", nil)
-	// })
 	router.Run(listenAddr)
 }
 
