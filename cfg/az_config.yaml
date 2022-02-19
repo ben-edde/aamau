@@ -1,0 +1,5 @@
+USERNAME: ben
+PASSWORD: db4Aamau
+SERVER: aamau-db-mysql-server.mysql.database.azure.com
+PORT: 3306
+DATABASE: aamauDB
