@@ -1,6 +1,7 @@
 package order
 
 import (
+	"aamau/utils"
 	"fmt"
 	"net/http"
 
@@ -38,7 +39,7 @@ func create_order(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, fmt.Sprintf("%s", err))
 		return
 	}
-	Create_order(orderValidator.order)
+	Create_order(utils.Get_connection(), orderValidator.order)
 	response := fmt.Sprintf("Created order: %v", orderValidator.order)
 	c.JSON(http.StatusOK, gin.H{"content": response})
 }
@@ -58,7 +59,7 @@ func update_order_by_id(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, fmt.Sprintf("%s", err))
 		return
 	}
-	Update_order(fmt.Sprintf("orderId=%s", orderId), orderValidator.order)
+	Update_order(utils.Get_connection(), fmt.Sprintf("orderId=%s", orderId), orderValidator.order)
 	orderSerializer := OrderSerializer{c, orderValidator.order}
 	c.JSON(http.StatusOK, gin.H{"orderId": orderId, "updated_order": orderSerializer.Response()})
 }

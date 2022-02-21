@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 type Order struct {
@@ -18,13 +19,13 @@ type Order struct {
 	TotalPrice   float32        `gorm:"type:float NOT NULL;column:totalPrice" form:"totalPrice" json:"totalPrice"`
 }
 
-func Create_order(order Order) {
-	conn := utils.Get_connection()
+func Create_order(conn *gorm.DB, order Order) {
 	result := conn.Debug().Table("Orders").Model(&Order{}).Create(&order)
 	if result.Error != nil || result.RowsAffected != 1 {
-		fmt.Errorf("create order failed.")
+		fmt.Printf("create order failed: %s\n", result.Error)
 	}
 }
+
 func Get_order(orderId string) Order {
 	uid, err := strconv.Atoi(orderId)
 	if err != nil {
@@ -45,11 +46,10 @@ func Get_all_orders() []Order {
 	conn.Debug().Table("Orders").Model(&Order{}).Find(&orderList)
 	return orderList
 }
-func Update_order(up_condition string, order Order) {
-	conn := utils.Get_connection()
+func Update_order(conn *gorm.DB, up_condition string, order Order) {
 	result := conn.Debug().Table("Orders").Model(&Order{}).Where(up_condition).Updates(order)
 	if result.Error != nil || result.RowsAffected != 1 {
-		fmt.Errorf("update order failed.")
+		fmt.Printf("update order failed: %s\n", result.Error)
 	}
 }
 func Delete_order(rm_condition string) {
