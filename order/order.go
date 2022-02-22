@@ -20,7 +20,7 @@ type Order struct {
 }
 
 func Create_order(conn *gorm.DB, order Order) {
-	result := conn.Debug().Table("Orders").Model(&Order{}).Create(&order)
+	result := conn.Table("Orders").Model(&Order{}).Create(&order)
 	if result.Error != nil || result.RowsAffected != 1 {
 		fmt.Printf("create order failed: %s\n", result.Error)
 	}
@@ -33,28 +33,30 @@ func Get_order(conn *gorm.DB, orderId string) Order {
 		return Order{}
 	}
 	var order Order
-	result := conn.Debug().Table("Orders").Where("orderId=?", uid).Find(&order)
+	result := conn.Table("Orders").Where("orderId=?", uid).Find(&order)
 	if result.Error != nil || result.RowsAffected > 1 {
 		fmt.Printf("get order failed: %s\n", result.Error)
 	}
 	return order
 }
+
 func Get_all_orders() []Order {
 	conn := utils.Get_connection()
 	var orderList []Order
-	conn.Debug().Table("Orders").Model(&Order{}).Find(&orderList)
+	conn.Table("Orders").Model(&Order{}).Find(&orderList)
 	return orderList
 }
+
 func Update_order(conn *gorm.DB, up_condition string, order Order) {
-	result := conn.Debug().Table("Orders").Model(&Order{}).Where(up_condition).Updates(order)
+	result := conn.Table("Orders").Model(&Order{}).Where(up_condition).Updates(order)
 	if result.Error != nil || result.RowsAffected != 1 {
 		fmt.Printf("update order failed: %s\n", result.Error)
 	}
 }
-func Delete_order(rm_condition string) {
-	conn := utils.Get_connection()
-	result := conn.Debug().Table("Orders").Model(&Order{}).Where(rm_condition).Delete(&Order{})
+
+func Delete_order(conn *gorm.DB, rm_condition string) {
+	result := conn.Table("Orders").Model(&Order{}).Where(rm_condition).Delete(&Order{})
 	if result.Error != nil || result.RowsAffected != 1 {
-		fmt.Errorf("delete order failed.")
+		fmt.Printf("delete order failed: %s\n", result.Error)
 	}
 }

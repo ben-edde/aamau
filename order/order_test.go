@@ -107,9 +107,10 @@ func setup() (*Suite, error) {
 	if s.db == nil {
 		return nil, fmt.Errorf("gorm db is null\n")
 	}
-	// defer db.Close()
+
 	return s, nil
 }
+
 func Test_create_order(t *testing.T) {
 	s, err := setup()
 	if err != nil {
@@ -135,12 +136,17 @@ func Test_create_order(t *testing.T) {
 	s.mock.ExpectExec("INSERT INTO `Orders` (`orderDate`,`deliveryDate`,`userId`,`cakeId`,`amount`,`totalPrice`,`orderId`) VALUES (?,?,?,?,?,?,?)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(42, 1))
 	s.mock.ExpectCommit()
 
-	Create_order(s.db, test_order)
+	Create_order(s.db.Debug(), test_order)
 
 	err = s.mock.ExpectationsWereMet()
 	if err != nil {
 		t.Errorf("Failed to meet expectations, got error: %v", err)
 	}
+
+	t.Cleanup(func() {
+		db, _ := s.db.DB()
+		db.Close()
+	})
 }
 
 func Test_update_order(t *testing.T) {
@@ -168,12 +174,17 @@ func Test_update_order(t *testing.T) {
 	s.mock.ExpectExec("UPDATE `Orders` SET `orderId`=?,`orderDate`=?,`deliveryDate`=?,`userId`=?,`cakeId`=?,`amount`=?,`totalPrice`=? WHERE orderId=42").WithArgs(args...).WillReturnResult(sqlmock.NewResult(42, 1))
 	s.mock.ExpectCommit()
 
-	Update_order(s.db, "orderId=42", test_order)
+	Update_order(s.db.Debug(), "orderId=42", test_order)
 
 	err = s.mock.ExpectationsWereMet()
 	if err != nil {
 		t.Errorf("Failed to meet expectations, got error: %v", err)
 	}
+
+	t.Cleanup(func() {
+		db, _ := s.db.DB()
+		db.Close()
+	})
 }
 
 func Test_get_order(t *testing.T) {
@@ -198,7 +209,7 @@ func Test_get_order(t *testing.T) {
 
 	s.mock.ExpectQuery("SELECT * FROM `Orders` WHERE orderId=?").WithArgs(42).WillReturnRows(sqlmock.NewRows([]string{"OrderId", "OrderDate", "DeliveryDate", "UserId", "CakeId", "Amount", "TotalPrice"}).AddRow(args...))
 
-	found_order := Get_order(s.db, "42")
+	found_order := Get_order(s.db.Debug(), "42")
 	if found_order != test_order {
 		t.Errorf("Error in querying order")
 	}
@@ -206,4 +217,33 @@ func Test_get_order(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to meet expectations, got error: %v", err)
 	}
+
+	t.Cleanup(func() {
+		db, _ := s.db.DB()
+		db.Close()
+	})
+}
+
+func Test_delete_order(t *testing.T) {
+	s, err := setup()
+	if err != nil {
+		t.Errorf("Failed to set up")
+	}
+
+	s.mock.MatchExpectationsInOrder(false)
+	s.mock.ExpectBegin()
+	s.mock.ExpectExec("DELETE FROM `Orders` WHERE orderId=42").WillReturnResult(sqlmock.NewResult(42, 1))
+	s.mock.ExpectCommit()
+
+	Delete_order(s.db.Debug(), "orderId=42")
+
+	err = s.mock.ExpectationsWereMet()
+	if err != nil {
+		t.Errorf("Failed to meet expectations, got error: %v", err)
+	}
+
+	t.Cleanup(func() {
+		db, _ := s.db.DB()
+		db.Close()
+	})
 }
