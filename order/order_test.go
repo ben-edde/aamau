@@ -165,13 +165,43 @@ func Test_update_order(t *testing.T) {
 
 	s.mock.MatchExpectationsInOrder(false)
 	s.mock.ExpectBegin()
+	s.mock.ExpectExec("UPDATE `Orders` SET `orderId`=?,`orderDate`=?,`deliveryDate`=?,`userId`=?,`cakeId`=?,`amount`=?,`totalPrice`=? WHERE orderId=42").WithArgs(args...).WillReturnResult(sqlmock.NewResult(42, 1))
+	s.mock.ExpectCommit()
 
-	// s.mock.ExpectExec("UPDATE `Orders` ").WillReturnResult(sqlmock.NewResult(42, 1))
-	s.mock.ExpectExec("UPDATE `Orders` SET `orderId`=?,`orderDate`=?,`deliveryDate`=?,`userId`=?,`cakeId`=?,`amount`=?,`totalPrice`=? WHERE orderId=42").WithArgs(args...) //.WillReturnResult(sqlmock.NewResult(42, 1))
-	// s.mock.ExpectCommit()``
-	s.mock.ExpectRollback()
 	Update_order(s.db, "orderId=42", test_order)
 
+	err = s.mock.ExpectationsWereMet()
+	if err != nil {
+		t.Errorf("Failed to meet expectations, got error: %v", err)
+	}
+}
+
+func Test_get_order(t *testing.T) {
+	s, err := setup()
+	if err != nil {
+		t.Errorf("Failed to set up")
+	}
+
+	test_order := Order{
+		OrderId:      42,
+		OrderDate:    datatypes.Date(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
+		DeliveryDate: datatypes.Date(time.Date(1970, 1, 2, 0, 0, 0, 0, time.UTC)),
+		UserId:       10,
+		CakeId:       10,
+		Amount:       30,
+		TotalPrice:   42.1,
+	}
+
+	tmp1, _ := test_order.OrderDate.Value()
+	tmp2, _ := test_order.DeliveryDate.Value()
+	args := []driver.Value{test_order.OrderId, tmp1, tmp2, test_order.UserId, test_order.CakeId, test_order.Amount, test_order.TotalPrice}
+
+	s.mock.ExpectQuery("SELECT * FROM `Orders` WHERE orderId=?").WithArgs(42).WillReturnRows(sqlmock.NewRows([]string{"OrderId", "OrderDate", "DeliveryDate", "UserId", "CakeId", "Amount", "TotalPrice"}).AddRow(args...))
+
+	found_order := Get_order(s.db, "42")
+	if found_order != test_order {
+		t.Errorf("Error in querying order")
+	}
 	err = s.mock.ExpectationsWereMet()
 	if err != nil {
 		t.Errorf("Failed to meet expectations, got error: %v", err)

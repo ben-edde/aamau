@@ -26,13 +26,12 @@ func Create_order(conn *gorm.DB, order Order) {
 	}
 }
 
-func Get_order(orderId string) Order {
+func Get_order(conn *gorm.DB, orderId string) Order {
 	uid, err := strconv.Atoi(orderId)
 	if err != nil {
 		fmt.Println(err)
 		return Order{}
 	}
-	conn := utils.Get_connection()
 	var order Order
 	result := conn.Debug().Table("Orders").Where("orderId=?", uid).Find(&order)
 	if result.Error != nil || result.RowsAffected > 1 {

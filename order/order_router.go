@@ -18,7 +18,7 @@ func OrderAPIRegister(router *gin.RouterGroup) {
 
 func get_order_by_id(c *gin.Context) {
 	orderId := c.Param("orderId")
-	found_order := Get_order(orderId)
+	found_order := Get_order(utils.Get_connection(), orderId)
 	orderSerializer := OrderSerializer{c, found_order}
 	c.JSON(http.StatusOK, gin.H{"orderId": orderId, "order": orderSerializer.Response()})
 }
@@ -46,7 +46,7 @@ func create_order(c *gin.Context) {
 
 func delete_order_by_id(c *gin.Context) {
 	orderId := c.Param("orderId")
-	found_order := Get_order(orderId)
+	found_order := Get_order(utils.Get_connection(), orderId)
 	Delete_order(fmt.Sprintf("orderId=%s", orderId))
 	orderSerializer := OrderSerializer{c, found_order}
 	c.JSON(http.StatusOK, gin.H{"orderId": orderId, "deleted_order": orderSerializer.Response()})
