@@ -4,6 +4,8 @@ import (
 	"aamau/utils"
 	"fmt"
 	"strconv"
+
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -36,12 +38,12 @@ func Get_all_users() []User {
 	return userlist
 }
 
-func Create_user(user User) {
-	conn := utils.Get_connection()
+func Create_user(conn *gorm.DB, user User) uint {
 	result := conn.Debug().Table("User").Model(&User{}).Create(&user)
 	if result.Error != nil || result.RowsAffected != 1 {
 		fmt.Errorf("create user failed.")
 	}
+	return user.UserId
 }
 
 func Update_user(up_condition string, user User) {

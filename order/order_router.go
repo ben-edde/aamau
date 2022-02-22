@@ -11,6 +11,7 @@ import (
 func OrderAPIRegister(router *gin.RouterGroup) {
 	router.GET("/all", get_all_orders)
 	router.GET("/:orderId", get_order_by_id)
+	router.POST("/new", new_order)
 	router.POST("/", create_order)
 	router.DELETE("/:orderId", delete_order_by_id)
 	router.PUT("/:orderId", update_order_by_id)
@@ -62,4 +63,20 @@ func update_order_by_id(c *gin.Context) {
 	Update_order(utils.Get_connection(), fmt.Sprintf("orderId=%s", orderId), orderValidator.order)
 	orderSerializer := OrderSerializer{c, orderValidator.order}
 	c.JSON(http.StatusOK, gin.H{"orderId": orderId, "updated_order": orderSerializer.Response()})
+}
+
+func new_order(c *gin.Context) {
+	orderValidator := RawOrderValidator{}
+	if err := orderValidator.Bind(c); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, fmt.Sprintf("%s", err))
+		return
+	}
+	if result_order, accepted := handle_order(utils.Get_connection(), orderValidator); !accepted || result_order == nil {
+		c.JSON(http.StatusInternalServerError, "Order rejected.")
+		return
+	} else {
+		Create_order(utils.Get_connection(), *result_order)
+		orderSerializer := OrderSerializer{c, orderValidator.order}
+		c.JSON(http.StatusOK, gin.H{"response": orderSerializer.Response()})
+	}
 }

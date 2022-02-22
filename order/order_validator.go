@@ -5,9 +5,21 @@ import (
 	"strconv"
 	"time"
 
+	"aamau/user"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/datatypes"
 )
+
+type RawOrderInfo struct {
+	OrderDate       string `form:"orderDate" json:"orderDate"`
+	CakeId          string `form:"cakeId" json:"cakeId"`
+	Amount          string `form:"amount" json:"amount"`
+	UserName        string `form:"userName" json:"userName"`
+	ContactNo       string `form:"contactNo" json:"contactNo"`
+	Email           string `form:"email" json:"email"`
+	DeliveryAddress string `form:"deliveryAddress" json:"deliveryAddress"`
+}
 
 type OrderInfo struct {
 	OrderDate    string `form:"orderDate" json:"orderDate"`
@@ -22,9 +34,15 @@ type OrderValidator struct {
 	orderInfo OrderInfo
 	order     Order
 }
+type RawOrderValidator struct {
+	orderInfo RawOrderInfo
+	order     Order
+	user      user.User
+}
 
-func (self *OrderValidator) BindRaw(c *gin.Context) error {
+func (self *RawOrderValidator) Bind(c *gin.Context) error {
 	err := c.ShouldBindJSON(&(self.orderInfo))
+
 	fmt.Printf("OrderInfo: %v\n", self.orderInfo)
 	if err != nil {
 		return err
@@ -47,6 +65,11 @@ func (self *OrderValidator) BindRaw(c *gin.Context) error {
 	} else {
 		self.order.Amount = uint(amount)
 	}
+	self.user.UserName = self.orderInfo.UserName
+	self.user.Email = self.orderInfo.Email
+	self.user.ContactNo = self.orderInfo.ContactNo
+	self.user.DeliveryAddress = self.orderInfo.DeliveryAddress
+
 	return nil
 }
 

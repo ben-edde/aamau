@@ -361,7 +361,118 @@ func Test_check_enough_ingredient_fail_second(t *testing.T) {
 	})
 }
 
-func Test_get_delivery_date(t *testing.T) {}
+func Test_get_delivery_date(t *testing.T) {
+	s, err := setup()
+	if err != nil {
+		t.Errorf("Failed to set up")
+	}
+	s.mock.MatchExpectationsInOrder(false)
+	s.mock.ExpectQuery("SELECT dayNeeded FROM Cake WHERE cakeId=42").WillReturnRows(sqlmock.NewRows([]string{"dayNeeded"}).AddRow(2))
 
-func Test_create_new_user(t *testing.T) {}
-func Test_request_order(t *testing.T)   {}
+	mocked_order_date := datatypes.Date(time.Unix(int64(1641029400), 0))
+	expected_result := datatypes.Date(time.Unix(int64(1641375000), 0)) //4 days later
+	actual_result, err := get_delivery_date(s.db.Debug(), mocked_order_date, 42, 2)
+	if err != nil {
+		t.Errorf("Failed to check enough ingredient")
+	}
+
+	err = s.mock.ExpectationsWereMet()
+	if err != nil {
+		t.Errorf("Failed to meet expectations, got error: %v", err)
+	}
+	if !reflect.DeepEqual(expected_result, *actual_result) {
+		t.Error("Expected result != actual result")
+	}
+
+	t.Cleanup(func() {
+		db, _ := s.db.DB()
+		db.Close()
+	})
+}
+
+func Test_calculate_total_price(t *testing.T) {
+	s, err := setup()
+	if err != nil {
+		t.Errorf("Failed to set up")
+	}
+	s.mock.MatchExpectationsInOrder(false)
+	s.mock.ExpectQuery("SELECT price FROM Cake WHERE cakeId=42").WillReturnRows(sqlmock.NewRows([]string{"price"}).AddRow(12.3))
+
+	expected_result := float32(61.5)
+	actual_result := calculate_total_price(s.db.Debug(), 42, 5)
+	if err != nil {
+		t.Errorf("Failed to check enough ingredient")
+	}
+
+	err = s.mock.ExpectationsWereMet()
+	if err != nil {
+		t.Errorf("Failed to meet expectations, got error: %v", err)
+	}
+	if expected_result != actual_result {
+		t.Error("Expected result != actual result")
+	}
+
+	t.Cleanup(func() {
+		db, _ := s.db.DB()
+		db.Close()
+	})
+}
+
+func Test_request_order(t *testing.T) {
+	s, err := setup()
+	if err != nil {
+		t.Errorf("Failed to set up")
+	}
+
+	s.mock.MatchExpectationsInOrder(false)
+	s.mock.ExpectBegin()
+	s.mock.ExpectQuery("SELECT ingredientId,ingredientAmountRequired FROM Recipe WHERE cakeId=42").WillReturnRows(sqlmock.NewRows([]string{"ingredientId", "ingredientAmountRequired"}).AddRow(1, 2).AddRow(2, 3))
+	s.mock.ExpectQuery("SELECT ingredientAmount FROM Ingredient WHERE ingredientId=1").WillReturnRows(sqlmock.NewRows([]string{"ingredientAmount"}).AddRow(4))
+	s.mock.ExpectQuery("SELECT ingredientAmount FROM Ingredient WHERE ingredientId=2").WillReturnRows(sqlmock.NewRows([]string{"ingredientAmount"}).AddRow(6))
+	s.mock.ExpectQuery("SELECT dayNeeded FROM Cake WHERE cakeId=42").WillReturnRows(sqlmock.NewRows([]string{"dayNeeded"}).AddRow(2))
+	s.mock.ExpectQuery("SELECT price FROM Cake WHERE cakeId=42").WillReturnRows(sqlmock.NewRows([]string{"price"}).AddRow(12.3))
+	s.mock.ExpectExec("INSERT INTO `User` (`userName`,`contactNo`,`email`,`deliveryAddress`) VALUES (?,?,?,?)").WithArgs("dummyduck", "1234", "a@b.com", "somewhere").WillReturnResult(sqlmock.NewResult(0, 1))
+
+	expected_result := Order{
+		OrderId:      0,
+		OrderDate:    datatypes.Date(time.Unix(int64(1641029400), 0)),
+		CakeId:       42,
+		Amount:       2,
+		DeliveryDate: datatypes.Date(time.Unix(int64(1641375000), 0)),
+		UserId:       0,
+		TotalPrice:   24.6,
+	}
+
+	// tmp1, _ := expected_result.OrderDate.Value()
+	// tmp2, _ := expected_result.DeliveryDate.Value()
+	// args := []driver.Value{tmp1, tmp2, expected_result.UserId, expected_result.CakeId, expected_result.Amount, expected_result.TotalPrice, expected_result.OrderId}
+
+	// s.mock.ExpectExec("INSERT INTO `Orders` (`orderDate`,`deliveryDate`,`userId`,`cakeId`,`amount`,`totalPrice`,`orderId`) VALUES (?,?,?,?,?,?,?)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(0, 1))
+	s.mock.ExpectCommit()
+
+	mocked_validator := RawOrderValidator{}
+	mocked_validator.order.CakeId = 42
+	mocked_validator.order.Amount = 2
+	mocked_validator.order.OrderDate = datatypes.Date(time.Unix(int64(1641029400), 0))
+	mocked_validator.user.UserName = "dummyduck"
+	mocked_validator.user.ContactNo = "1234"
+	mocked_validator.user.Email = "a@b.com"
+	mocked_validator.user.DeliveryAddress = "somewhere"
+
+	actual_result_order, actual_result_status := handle_order(s.db.Debug(), mocked_validator)
+
+	err = s.mock.ExpectationsWereMet()
+	if err != nil {
+		t.Errorf("Failed to meet expectations, got error: %v", err)
+	}
+	if !actual_result_status {
+		t.Errorf("Failed handling order")
+	}
+	if !reflect.DeepEqual(expected_result, *actual_result_order) {
+		t.Error("Expected result != actual result")
+	}
+	t.Cleanup(func() {
+		db, _ := s.db.DB()
+		db.Close()
+	})
+}
