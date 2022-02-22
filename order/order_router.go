@@ -1,6 +1,7 @@
 package order
 
 import (
+	"aamau/utils"
 	"fmt"
 	"net/http"
 
@@ -10,6 +11,7 @@ import (
 func OrderAPIRegister(router *gin.RouterGroup) {
 	router.GET("/all", get_all_orders)
 	router.GET("/:orderId", get_order_by_id)
+	router.POST("/new", new_order)
 	router.POST("/", create_order)
 	router.DELETE("/:orderId", delete_order_by_id)
 	router.PUT("/:orderId", update_order_by_id)
@@ -17,7 +19,7 @@ func OrderAPIRegister(router *gin.RouterGroup) {
 
 func get_order_by_id(c *gin.Context) {
 	orderId := c.Param("orderId")
-	found_order := Get_order(orderId)
+	found_order := Get_order(utils.Get_connection(), orderId)
 	orderSerializer := OrderSerializer{c, found_order}
 	c.JSON(http.StatusOK, gin.H{"orderId": orderId, "order": orderSerializer.Response()})
 }
@@ -38,15 +40,15 @@ func create_order(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, fmt.Sprintf("%s", err))
 		return
 	}
-	Create_order(orderValidator.order)
+	Create_order(utils.Get_connection(), orderValidator.order)
 	response := fmt.Sprintf("Created order: %v", orderValidator.order)
 	c.JSON(http.StatusOK, gin.H{"content": response})
 }
 
 func delete_order_by_id(c *gin.Context) {
 	orderId := c.Param("orderId")
-	found_order := Get_order(orderId)
-	Delete_order(fmt.Sprintf("orderId=%s", orderId))
+	found_order := Get_order(utils.Get_connection(), orderId)
+	Delete_order(utils.Get_connection(), fmt.Sprintf("orderId=%s", orderId))
 	orderSerializer := OrderSerializer{c, found_order}
 	c.JSON(http.StatusOK, gin.H{"orderId": orderId, "deleted_order": orderSerializer.Response()})
 }
@@ -58,7 +60,23 @@ func update_order_by_id(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, fmt.Sprintf("%s", err))
 		return
 	}
-	Update_order(fmt.Sprintf("orderId=%s", orderId), orderValidator.order)
+	Update_order(utils.Get_connection(), fmt.Sprintf("orderId=%s", orderId), orderValidator.order)
 	orderSerializer := OrderSerializer{c, orderValidator.order}
 	c.JSON(http.StatusOK, gin.H{"orderId": orderId, "updated_order": orderSerializer.Response()})
+}
+
+func new_order(c *gin.Context) {
+	orderValidator := RawOrderValidator{}
+	if err := orderValidator.Bind(c); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, fmt.Sprintf("%s", err))
+		return
+	}
+	if result_order, accepted := handle_order(utils.Get_connection(), orderValidator); !accepted || result_order == nil {
+		c.JSON(http.StatusInternalServerError, "Order rejected.")
+		return
+	} else {
+		Create_order(utils.Get_connection(), *result_order)
+		orderSerializer := OrderSerializer{c, orderValidator.order}
+		c.JSON(http.StatusOK, gin.H{"response": orderSerializer.Response()})
+	}
 }

@@ -1,6 +1,7 @@
 package user
 
 import (
+	"aamau/utils"
 	"fmt"
 	"net/http"
 
@@ -42,7 +43,7 @@ func create_user(c *gin.Context) {
 	if err := c.ShouldBindJSON(&user); err != nil {
 		fmt.Println("ShouldBindJSON fault", err)
 	}
-	Create_user(user)
+	Create_user(utils.Get_connection(), user)
 	response := fmt.Sprintf("Created user: %v", user)
 	c.JSON(http.StatusOK, gin.H{"content": response})
 }
