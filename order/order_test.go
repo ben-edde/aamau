@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -247,3 +248,120 @@ func Test_delete_order(t *testing.T) {
 		db.Close()
 	})
 }
+
+func Test_get_cake_recipe_list(t *testing.T) {
+	s, err := setup()
+	if err != nil {
+		t.Errorf("Failed to set up")
+	}
+	s.mock.MatchExpectationsInOrder(false)
+	s.mock.ExpectQuery("SELECT ingredientId,ingredientAmountRequired FROM Recipe WHERE cakeId=1").WillReturnRows(sqlmock.NewRows([]string{"ingredientId", "ingredientAmountRequired"}).AddRow(1, 2).AddRow(2, 3))
+
+	expected_result := map[int]int{1: 2, 2: 3}
+	actual_result := get_cake_recipe_list(s.db.Debug(), 1)
+
+	err = s.mock.ExpectationsWereMet()
+	if err != nil {
+		t.Errorf("Failed to meet expectations, got error: %v", err)
+	}
+	if !reflect.DeepEqual(expected_result, actual_result) {
+		t.Error("Expected recipe map != actual result")
+
+	}
+
+	t.Cleanup(func() {
+		db, _ := s.db.DB()
+		db.Close()
+	})
+}
+
+func Test_check_enough_ingredient_pass(t *testing.T) {
+	s, err := setup()
+	if err != nil {
+		t.Errorf("Failed to set up")
+	}
+	s.mock.MatchExpectationsInOrder(false)
+	s.mock.ExpectQuery("SELECT ingredientAmount FROM Ingredient WHERE ingredientId=1").WillReturnRows(sqlmock.NewRows([]string{"ingredientAmount"}).AddRow(4))
+	s.mock.ExpectQuery("SELECT ingredientAmount FROM Ingredient WHERE ingredientId=2").WillReturnRows(sqlmock.NewRows([]string{"ingredientAmount"}).AddRow(6))
+
+	expected_result := true
+	actual_result, err := check_enough_ingredient(s.db.Debug(), map[int]int{1: 2, 2: 3}, 2)
+	if err != nil {
+		t.Errorf("Failed to check enough ingredient")
+	}
+
+	err = s.mock.ExpectationsWereMet()
+	if err != nil {
+		t.Errorf("Failed to meet expectations, got error: %v", err)
+	}
+	if !expected_result == actual_result {
+		t.Error("Expected result != actual result")
+	}
+
+	t.Cleanup(func() {
+		db, _ := s.db.DB()
+		db.Close()
+	})
+}
+func Test_check_enough_ingredient_fail_first(t *testing.T) {
+	s, err := setup()
+	if err != nil {
+		t.Errorf("Failed to set up")
+	}
+	s.mock.MatchExpectationsInOrder(false)
+	s.mock.ExpectQuery("SELECT ingredientAmount FROM Ingredient WHERE ingredientId=1").WillReturnRows(sqlmock.NewRows([]string{"ingredientAmount"}).AddRow(3))
+	// s.mock.ExpectQuery("SELECT ingredientAmount FROM Ingredient WHERE ingredientId=2").WillReturnRows(sqlmock.NewRows([]string{"ingredientAmount"}).AddRow(5))
+
+	expected_result := false
+	actual_result, err := check_enough_ingredient(s.db.Debug(), map[int]int{1: 2, 2: 3}, 2)
+	if err != nil {
+		t.Errorf("Failed to check enough ingredient")
+	}
+
+	err = s.mock.ExpectationsWereMet()
+	if err != nil {
+		t.Errorf("Failed to meet expectations, got error: %v", err)
+	}
+	if !expected_result == actual_result {
+		t.Error("Expected result != actual result")
+	}
+
+	t.Cleanup(func() {
+		db, _ := s.db.DB()
+		db.Close()
+	})
+}
+
+func Test_check_enough_ingredient_fail_second(t *testing.T) {
+	s, err := setup()
+	if err != nil {
+		t.Errorf("Failed to set up")
+	}
+	s.mock.MatchExpectationsInOrder(false)
+	s.mock.ExpectQuery("SELECT ingredientAmount FROM Ingredient WHERE ingredientId=1").WillReturnRows(sqlmock.NewRows([]string{"ingredientAmount"}).AddRow(4))
+	s.mock.ExpectQuery("SELECT ingredientAmount FROM Ingredient WHERE ingredientId=2").WillReturnRows(sqlmock.NewRows([]string{"ingredientAmount"}).AddRow(5))
+
+	expected_result := false
+	actual_result, err := check_enough_ingredient(s.db.Debug(), map[int]int{1: 2, 2: 3}, 2)
+	if err != nil {
+		t.Errorf("Failed to check enough ingredient")
+	}
+
+	err = s.mock.ExpectationsWereMet()
+	if err != nil {
+		t.Errorf("Failed to meet expectations, got error: %v", err)
+	}
+	if !expected_result == actual_result {
+		t.Error("Expected result != actual result")
+	}
+
+	t.Cleanup(func() {
+		db, _ := s.db.DB()
+		db.Close()
+	})
+}
+
+func Test_get_delivery_date(t *testing.T) {}
+
+func Test_create_new_user(t *testing.T) {}
+func Test_request_order(t *testing.T)   {}
