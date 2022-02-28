@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"aamau/cake"
@@ -36,6 +37,10 @@ func start() {
 	order.OrderAPIRegister(api_router_group.Group("/order"))
 	ingredient.IngredientAPIRegister(api_router_group.Group("/ingredient"))
 	recipe.RecipeAPIRegister(api_router_group.Group("/recipe"))
+	router.LoadHTMLGlob("view/index.html")
+	router.GET("/index", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
 
 	router.Run(listenAddr)
 }
