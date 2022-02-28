@@ -76,7 +76,7 @@ func new_order(c *gin.Context) {
 		return
 	} else {
 		Create_order(utils.Get_connection(), *result_order)
-		orderSerializer := OrderSerializer{c, orderValidator.order}
+		orderSerializer := OrderSerializer{c, *result_order}
 		c.JSON(http.StatusOK, gin.H{"response": orderSerializer.Response()})
 	}
 }
